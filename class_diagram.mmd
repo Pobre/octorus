@@ -1,0 +1,39 @@
+classDiagram
+package a
+    class TextProccessor{
+        <<trait>>
+        input_text(&str source) void
+        output_text() &str
+        proccess_text() void
+    }
+
+    class QueryOutput{
+        -&str result
+    }
+
+    class ResultOutput{
+        -create_table_from_result() void
+    }
+
+    QueryOutput ..|> TextProccessor
+    ResultOutput ..|> TextProccessor
+
+    class ORDatabase {
+        <<trait>>
+        get_connection() Result&lt;OK, ERROR>
+        set_database(&str name) Result&lt;OK, ERROR>
+        close_connection() Result&lt;OK, ERROR>
+        send_query(&str query, options) Result&lt;OK, ERROR>
+    }
+
+   MySql ..|> ORDatabase
+   MongoDb ..|> ORDatabase
+   SqlServer ..|> ORDatabase
+   MariaDb --|> MySql
+   
+   class ORResult {
+        <<trait>>
+        +data_headers Vec<&str>
+        +data_values Vec<>
+        +meta_data K
+    }
