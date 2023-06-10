@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use crate::{ordatabase::ORDatabase, orresult::ORResult};
 use mysql::{self, prelude::Queryable, Pool};
 
+#[derive(Debug)]
 pub struct ORMySql {
     connection: mysql::PooledConn,
 }
