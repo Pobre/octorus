@@ -1,5 +1,5 @@
-use egui_extras::TableBuilder;
-use octorus::{ordatabase::ORDatabase, ormysql::ORMySql};
+use egui_extras::{Column, Table, TableBuilder};
+use octorus::{ordatabase::ORDatabase, orresult::ORResult};
 
 fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
@@ -18,13 +18,19 @@ enum Ordb {
     ORMySql(octorus::ormysql::ORMySql),
 }
 
+struct TableResult {
+    orresult: ORResult,
+}
+
 struct MyApp {
     dbms_names: Vec<String>,
     host: String,
     user: String,
     password: String,
     database: String,
+    query: String,
     ordb: Option<Ordb>,
+    table: Option<TableResult>,
 }
 
 impl MyApp {
@@ -34,7 +40,9 @@ impl MyApp {
         user: String,
         password: String,
         database: String,
+        query: String,
         ordb: Option<Ordb>,
+        table: Option<TableResult>,
     ) -> Self {
         Self {
             dbms_names,
@@ -42,7 +50,9 @@ impl MyApp {
             user,
             password,
             database,
+            query,
             ordb,
+            table,
         }
     }
 }
@@ -55,6 +65,8 @@ impl Default for MyApp {
             String::new(),
             String::new(),
             String::new(),
+            String::new(),
+            None,
             None,
         )
     }
@@ -117,17 +129,43 @@ impl eframe::App for MyApp {
                         ui.label(format!("{}", status));
                     });
                 });
-            let mut query = String::new();
-            ui.text_edit_multiline(&mut query);
-            let mut table = TableBuilder::new(ui)
-                .striped(true)
-                .resizable(true)
-                .cell_layout(egui::Layout::left_to_right(egui::Align::Center));
+            egui::TextEdit::multiline(&mut self.query).show(ui);
+
+            match &self.table {
+                Some(r) => {
+                    let orresult = &r.orresult;
+                    let mut table = TableBuilder::new(ui)
+                        .striped(true)
+                        .resizable(true)
+                        .cell_layout(egui::Layout::left_to_right(egui::Align::Center));
+                    table = table.columns(Column::auto(), orresult.header.len());
+                    table = table.scroll_to_row(orresult.result_set.len(), None);
+                    table
+                        .header(20.0, |mut header| {
+                            for h in &orresult.header {
+                                header.col(|ui| {
+                                    ui.strong(h);
+                                });
+                            }
+                        })
+                        .body(|body| {
+                            body.rows(20.0, orresult.result_set.len(), |row_index, mut row| {
+                                for text in &orresult.result_set[row_index] {
+                                    row.col(|ui| {
+                                        ui.label(text);
+                                    });
+                                }
+                            });
+                        });
+                }
+                None => (),
+            }
             if ui.button("Execute Query").clicked() {
-                match &self.ordb {
+                match self.ordb.as_mut() {
                     Some(Ordb::ORMySql(db)) => {
-                        let current_db: &ORMySql = db.clone();
-                        let orresult = *current_db.send_query(&query);
+                        self.table = Some(TableResult {
+                            orresult: db.send_query(&mut self.query).unwrap(),
+                        });
                     }
                     None => println!("Erro generico"),
                 }
