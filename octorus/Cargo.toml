@@ -6,4 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bson = "2.7.0"
+chrono = "0.4.30"
+mongodb = "2.6.1"
 mysql="*"
+serde = "1.0.188"
+tokio = "1.32.0"
