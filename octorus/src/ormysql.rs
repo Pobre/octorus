@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use std::collections::BTreeMap;
 
 use crate::{ordatabase::ORDatabase, orresult::ORResult};
@@ -13,37 +14,7 @@ impl ORMySql {
         let con = pool.get_conn().expect("nao conectou");
         Self { connection: con }
     }
-}
-
-impl ORDatabase for ORMySql {
-    fn new(
-        host: &str,
-        user: &str,
-        password: &str,
-        database: &str,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        let connection_string = format!(
-            "mysql://{0}:{1}@{2}:3306/{3}",
-            user, password, host, database
-        );
-        let pool = Pool::new(connection_string.as_str()).expect("Nao pode conectar ao banco");
-        let ormysql = ORMySql::new(pool);
-        Ok(ormysql)
-    }
-
-    fn new_with_connection_string(
-        connection_string: &str,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        let pool = Pool::new(connection_string).expect("URI invalida");
-        let ormysql = ORMySql::new(pool);
-        Ok(ormysql)
-    }
-
-    fn close_connection(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        todo!()
-    }
-
-    fn send_query(
+    pub async fn send_query(
         &mut self,
         query: &str,
         //opts: Option<T>,
@@ -79,5 +50,35 @@ impl ORDatabase for ORMySql {
 
         let orresult = ORResult::new(BTreeMap::new(), cols_name, result);
         Ok(orresult)
+    }
+}
+
+#[async_trait]
+impl ORDatabase for ORMySql {
+    async fn new(
+        host: &str,
+        user: &str,
+        password: &str,
+        database: &str,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let connection_string = format!(
+            "mysql://{0}:{1}@{2}:3306/{3}",
+            user, password, host, database
+        );
+        let pool = Pool::new(connection_string.as_str()).expect("Nao pode conectar ao banco");
+        let ormysql = ORMySql::new(pool);
+        Ok(ormysql)
+    }
+
+    async fn new_with_connection_string(
+        connection_string: &str,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let pool = Pool::new(connection_string).expect("URI invalida");
+        let ormysql = ORMySql::new(pool);
+        Ok(ormysql)
+    }
+
+    async fn close_connection(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        todo!()
     }
 }

@@ -1,11 +1,12 @@
+use ascii_table::AsciiTable;
 use std::env;
 use std::io;
 use std::io::Write;
-use ascii_table::AsciiTable;
 
 use octorus::{ordatabase::ORDatabase, ormysql::ORMySql};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = env::args().collect();
     let mut host = String::new();
     let mut user = String::new();
@@ -27,16 +28,20 @@ fn main() {
         }
     }
     println!("Conectando no banco");
-    let mut mysql =
-        ORMySql::new(&host, &user, &password, &database).expect("nao foi possivel conectar");
+    let mut mysql = ORMySql::new(&host, &user, &password, &database)
+        .await
+        .expect("nao foi possivel conectar");
     loop {
         print!("> ");
         let mut buffer = String::new();
         io::stdout().flush().unwrap();
-        io::stdin().read_line(&mut buffer).expect("nao foi possivel ler stdin");
+        io::stdin()
+            .read_line(&mut buffer)
+            .expect("nao foi possivel ler stdin");
         if buffer.trim() != "exit".trim() {
             let result = mysql
                 .send_query(buffer.as_str())
+                .await
                 .expect("nao foi possivel fazer a query");
 
             let ascii_table = AsciiTable::default();
